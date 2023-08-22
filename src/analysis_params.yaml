@@ -1,0 +1,84 @@
+params:
+  view:
+    show_figures: False
+
+### Data params
+  data:
+    view:
+      show_figures: True
+      histogram_max_tags: 500000
+    data_path: "..//data//diff3//4_20ns_dead//"
+    data_file: "n_diff3_pixel_4GHz_-0.046V_68.0.1.ttbin"
+    snspd_channel: -1
+    clock_channel: 9
+    data_limit: 1.0e+7 #number of raw time tags to decode. Without the '+', yaml will parse this incorrectly as a string.
+    delay_scan: False #should the program search for initial estimate of the timing offset bewteen the clock and snspd tags
+    delay: -67 # -50 for diff2
+    modulation_params:
+      pulses_per_clock: 50000 # number of attenuated laser pulses per clock tag
+      # clock_rate is measured from the data file. Pulse rate is found by multiplying pulses_per_clock by clock_rate
+    phase_locked_loop:
+      deriv: 200
+      prop: 9.0e-13 # careful! This could be interpreted wrong! You need the first number to have decimal point.
+      window: 0.95 # defines a time window around each laser pulse time. (ratio of laser period)
+      # tags arriving inside the window are used. tags outside are rejected
+      guard_period: 5000 # how much data to throw away at the beginning when PLL is stabilizing
+
+
+
+### Calibration
+  do_calibration: False
+  calibration:
+    type: '1d' # options are '1d' or '2d'
+    view:
+      show_figures: True #code breaks if some of these are turned on and others off
+    analysis_range: 300000 #picoseconds
+
+    ####### 1d
+    mask_method: "from_period" # options are "from_period" or "from_peaks"
+    mask_from_period:
+      adjustment_prop: .001
+      adjustment_mult: 1
+      adjustment_distance: 370 # used 300 for diff2
+      bootstrap_errorbars: False # add errorbars using boostrap method to t' and FWHM plots. This is slow.
+      kde_bandwidth: 0.0025 # amount of histogram smoothing in ps before measuring FWHM
+      low_cutoff: 2 # number of periods at the very beginning to ignore
+      max_section_tags: 100000 # ignore more than this number of tags per unique t' (for making hists, median, FWHM)
+      minimum_valid_counts_per_pulse: 20 # if these are less than this number of events for a given lase pulse, ignore
+    mask_from_peaks:
+      down_sample: 150
+    ####### 2d
+    prime_steps: 150
+    min_sub_delay: 10
+
+
+    output:
+      save_analysis_result: True
+      save_name: "..//calibration//diff3//calibration_results_"
+
+
+  ### Correction
+  do_correction: True # TODO unknown behavior when this and correct_multiple are on
+  correction:
+    type: '1d' # options are '1d' or '2d'
+    view:
+      show_figures: False
+    load_pre-generated_calibration: True # if false, do_calibration above needs to be on
+    pre-generated_calibration:
+      path: "..//calibration//diff3//"
+      file: "calibration_results_14.07.2023_18.26.18.json"
+
+    correct_multiple_files: True # if True, the data path at the top will be ignored
+    multiple_files_path: "..//data//diff3//4_20ns_dead//"
+
+    spline_interpolation_resolution: 70 # controls the smoothing of the CubicSpline used for measuring FWHM, etc.
+
+    output:
+      save_fig: True
+      save_correction_result: True
+      save_location: "..//correction//diff3//" # a single or multiple correction result files will go here.
+      save_name: "corrected_results_"
+      data_file_snip: [0,-8] # defines snip of data file name that's included in results file
+
+
+
